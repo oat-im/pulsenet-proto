@@ -124,9 +124,19 @@ Build a **C++-native, zero-dependency**, efficient, minimal UDP protocol library
 
   * Server has hard cap on max clients.
   * MTU enforced as 1200 bytes.
-  * Packet pools optionally used to avoid malloc churn (later optimization).
+  * Buffer pools are allocated for each session and channel.
 
-### 13. ✅ Logging / Telemetry (Optional)
+### 13. ✅ No Exceptions (other than constructors)
+
+**Requirement**: No exceptions in the protocol runtime.
+* **Design**:
+
+  * Use C++23 `std::expected` for error handling.
+  * All errors are returned as `std::expected` from functions.
+  * Exceptions are only thrown in constructors for invalid states.
+  * No exceptions in the protocol runtime. No try/catch hell.
+
+### 14. ✅ Logging / Telemetry (Optional)
 
 * **Requirement**: Log internal state for debug/ops.
 * **Design**:
