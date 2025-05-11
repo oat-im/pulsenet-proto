@@ -17,26 +17,30 @@ void sleepMs(int ms) {
 }
 
 int main() {
-    auto listenAddr = udp::Addr(udp::Addr::AnyIPv4, SERVER_PORT);
-    auto serverAddr = udp::Addr("127.0.0.1", SERVER_PORT);
+    auto listen_addr_result = udp::Addr::Create(udp::Addr::kAnyIPv4, SERVER_PORT);
+    assert(listen_addr_result);
+    auto& listen_addr = *listen_addr_result;
+    auto server_addr_result = udp::Addr::Create("127.0.0.1", SERVER_PORT);
+    assert(server_addr_result);
+    auto& server_addr = *server_addr_result;
 
-    auto serverSockResult = udp::Listen(listenAddr);
-    assert(serverSockResult);
-    auto& serverSock = **serverSockResult;
+    auto server_sock_result = udp::get_socket_factory()->listen(listen_addr);
+    assert(server_sock_result);
+    auto& server_sock = **server_sock_result;
 
-    auto clientSockResult = udp::Dial(serverAddr);
-    assert(clientSockResult);
-    auto& clientSock = **clientSockResult;
+    auto client_sock_result = udp::get_socket_factory()->dial(server_addr);
+    assert(client_sock_result);
+    auto& client_sock = **client_sock_result;
 
 
-    std::unique_ptr<proto::Protocol> serverProto, clientProto;
+    std::unique_ptr<proto::Protocol> server_proto, client_proto;
 
-    bool serverReceived = false;
-    bool clientReceived = false;
-    std::string receivedMsg;
+    bool server_received = false;
+    bool client_received = false;
+    std::string receive_msg;
 
-    serverProto = proto::CreateProtocol(
-        serverSock,
+    server_proto = proto::CreateProtocol(
+        server_sock,
         [&](proto::Session& sess, uint8_t channel, proto::BufferView buf) {
             assert(channel == CHANNEL_CLIENT_TO_SERVER);
             assert(buf.size == 5);
@@ -51,7 +55,7 @@ int main() {
             } else {
                 std::cout << "[Server] Received: " << msg << "\n";
             }
-            serverReceived = true;
+            server_received = true;
 
             // Echo back
             sess.sendReliable(CHANNEL_SERVER_TO_CLIENT, buf);
@@ -61,8 +65,8 @@ int main() {
         }
     ).value();
 
-    clientProto = proto::CreateProtocol(
-        clientSock,
+    client_proto = proto::CreateProtocol(
+        client_sock,
         [&](proto::Session& sess, uint8_t channel, proto::BufferView buf) {
             assert(channel == CHANNEL_SERVER_TO_CLIENT);
             assert(buf.size == 5);
@@ -77,8 +81,8 @@ int main() {
             } else {
                 std::cout << "[Client] Received: " << msg << "\n";
             }
-            receivedMsg = msg;
-            clientReceived = true;
+            receive_msg = msg;
+            client_received = true;
         },
         [&](const udp::Addr&) {
             std::cout << "[Client] Server disconnected.\n";
@@ -86,34 +90,34 @@ int main() {
     ).value();
 
     // Manually spoof a hello by sending something from client
-    auto clientSessionResult = clientProto->connect(serverAddr);
-    assert(clientSessionResult);
-    auto clientSession = *clientSessionResult;
+    auto client_session_result = client_proto->connect(server_addr);
+    assert(client_session_result);
+    auto client_session = *client_session_result;
 
     std::string hello = "hello";
-    clientSession->sendReliable(CHANNEL_CLIENT_TO_SERVER, proto::BufferView{
+    client_session->sendReliable(CHANNEL_CLIENT_TO_SERVER, proto::BufferView{
         reinterpret_cast<const uint8_t*>(hello.data()), hello.size()
     });
 
     // Pump both loops
-    for (int i = 0; i < 20 && !(serverReceived && clientReceived); ++i) {
-        clientProto->tick();
-        serverProto->tick();
+    for (int i = 0; i < 20 && !(server_received && client_received); ++i) {
+        client_proto->tick();
+        server_proto->tick();
         sleepMs(10);
     }
 
-    assert(serverReceived);
-    assert(clientReceived);
-    assert(receivedMsg == "hello");
+    assert(server_received);
+    assert(client_received);
+    assert(receive_msg == "hello");
 
     std::cout << "[Test] Reliable message echoed successfully.\n";
 
     // Let idle timeout trigger
     sleepMs(12000);
-    serverProto->tick();
-    clientProto->tick();
+    server_proto->tick();
+    client_proto->tick();
 
-    assert(serverProto->sessions().empty() || clientProto->sessions().empty());
+    assert(server_proto->sessions().empty() || client_proto->sessions().empty());
 
     std::cout << "[Test] Session timeout cleanup verified.\n";
     return 0;

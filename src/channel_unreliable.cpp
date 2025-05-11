@@ -18,7 +18,7 @@ void UnreliableChannel::queue(uint8_t channelId, BufferView payload) {
 }
     
 
-void UnreliableChannel::flush(udp::Socket& socket, const udp::Addr& to) {
+void UnreliableChannel::flush(udp::ISocket& socket, const udp::Addr& to) {
     while (!buffer_.empty()) {
         auto& pkt = buffer_.front();
         socket.sendTo(to, pkt.data(), pkt.size());

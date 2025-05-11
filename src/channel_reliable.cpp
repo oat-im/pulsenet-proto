@@ -24,7 +24,7 @@ std::expected<void, ErrorCode> ReliableChannel::queue(uint8_t channelId, BufferV
     return {};
 }   
 
-void ReliableChannel::flush(udp::Socket& socket, const udp::Addr& to, uint64_t nowNs) {
+void ReliableChannel::flush(udp::ISocket& socket, const udp::Addr& to, uint64_t nowNs) {
     for (auto& pkt : queue_) {
         if (pkt.lastSentNs == 0 || nowNs - pkt.lastSentNs >= RESEND_TIMEOUT_NS) {
             socket.sendTo(to, pkt.data.data(), pkt.data.size());

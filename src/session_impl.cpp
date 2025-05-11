@@ -56,7 +56,7 @@ std::optional<Session::ChannelStats> SessionImpl::getChannelStats(uint8_t channe
     return ChannelStats{s.lastSent, s.lastAcked, s.unacked};
 }
 
-void SessionImpl::onReceive(const ParsedPacket& pkt, udp::Socket& socket, OnPayloadFn& onPayload, uint64_t nowNs) {
+void SessionImpl::onReceive(const ParsedPacket& pkt, udp::ISocket& socket, OnPayloadFn& onPayload, uint64_t nowNs) {
     lastRecvNs_ = nowNs;
 
     if (pkt.base->type == static_cast<uint8_t>(PacketType::Ping)) {
@@ -108,7 +108,7 @@ void SessionImpl::onReceive(const ParsedPacket& pkt, udp::Socket& socket, OnPayl
     onPayload(*this, pkt.base->channelId, BufferView(pkt.payload, pkt.payloadLen));
 }
 
-void SessionImpl::flush(udp::Socket& socket, uint64_t nowNs) {
+void SessionImpl::flush(udp::ISocket& socket, uint64_t nowNs) {
     for (auto& [ch, c] : unreliable_) {
         c.flush(socket, addr_);
     }

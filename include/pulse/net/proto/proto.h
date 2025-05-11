@@ -35,7 +35,7 @@ public:
 };
 
 std::expected<std::unique_ptr<Protocol>, ErrorCode> CreateProtocol(
-    udp::Socket& socket,
+    udp::ISocket& socket,
     OnPayloadFn onPayload,
     OnDisconnectFn onDisconnect,
     const Protocol::Config& config = {}

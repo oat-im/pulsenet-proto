@@ -32,8 +32,8 @@ public:
 
     std::optional<ChannelStats> getChannelStats(uint8_t channelId) const override;
 
-    void onReceive(const ParsedPacket& pkt, udp::Socket& socket, OnPayloadFn& onPayload, uint64_t nowNs);
-    void flush(udp::Socket& socket, uint64_t nowNs);
+    void onReceive(const ParsedPacket& pkt, udp::ISocket& socket, OnPayloadFn& onPayload, uint64_t nowNs);
+    void flush(udp::ISocket& socket, uint64_t nowNs);
 
 private:
     udp::Addr addr_;

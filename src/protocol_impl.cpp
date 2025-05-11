@@ -6,7 +6,7 @@
 
 namespace pulse::net::proto {
 
-ProtocolImpl::ProtocolImpl(udp::Socket& socket, OnPayloadFn onPayload, OnDisconnectFn onDisconnect, const Config& config)
+ProtocolImpl::ProtocolImpl(udp::ISocket& socket, OnPayloadFn onPayload, OnDisconnectFn onDisconnect, const Config& config)
     : socket_(socket), onPayload_(onPayload), onDisconnect_(onDisconnect), config_(config) {}
 
 void ProtocolImpl::tick() {
@@ -17,7 +17,8 @@ void ProtocolImpl::tick() {
         auto maybe = socket_.recvFrom();
         if (!maybe.has_value()) break;
 
-        auto [data, len, from] = *maybe;
+        auto [data, len, unused, from] = *maybe;
+        (void)unused; // unused in this context
         if (len < sizeof(BaseHeader)) continue;
 
         auto parsed = PacketReader::parse(data, len);
@@ -63,7 +64,7 @@ std::expected<Session*, ErrorCode> ProtocolImpl::connect(const udp::Addr& addr) 
 
 
 std::expected<std::unique_ptr<Protocol>, ErrorCode> CreateProtocol(
-    udp::Socket& socket,
+    udp::ISocket& socket,
     OnPayloadFn onPayload,
     OnDisconnectFn onDisconnect,
     const Protocol::Config& config

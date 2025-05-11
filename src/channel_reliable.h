@@ -15,7 +15,7 @@ public:
     ReliableChannel();
 
     std::expected<void, ErrorCode> queue(uint8_t channelId, BufferView payload);
-    void flush(udp::Socket& socket, const udp::Addr& to, uint64_t nowNs);
+    void flush(udp::ISocket& socket, const udp::Addr& to, uint64_t nowNs);
     void acknowledge(uint32_t ackSeq);
 
     struct Stats {

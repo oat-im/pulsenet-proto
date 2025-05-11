@@ -11,7 +11,7 @@ namespace pulse::net::proto {
 class UnreliableChannel {
 public:
     void queue(uint8_t channelId, BufferView payload);
-    void flush(udp::Socket& socket, const udp::Addr& to);
+    void flush(udp::ISocket& socket, const udp::Addr& to);
 
 private:
     std::deque<std::vector<uint8_t>> buffer_;
